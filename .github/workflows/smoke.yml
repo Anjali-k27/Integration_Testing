@@ -1,0 +1,20 @@
+name: Smoke Test
+on: [push, pull_request]
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Boot cluster
+        run: |
+          cp .env.ci .env
+          docker compose up -d --wait
+      - name: Install test dependencies
+        run: pip install pytest httpx PyJWT
+      - name: Run smoke suite
+        run: pytest -v --maxfail=1 tests/smoke_test.py
+        env:
+          EPOCH_BASE_URL: http://localhost:8080
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs --tail=100
